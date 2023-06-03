@@ -1,0 +1,3 @@
+*.exe
+gen-py/*
+gen-nodejs/*
