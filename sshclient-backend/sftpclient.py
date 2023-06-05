@@ -1,22 +1,30 @@
 import paramiko
-from paramiko import sftp
+from typing import Tuple
+from ClientException import InitException, NoConnectionException
 
 
-class NoConnectionException(Exception):
-    def __init__(self, error: str):
-        super().__init__(self)
-        self.error = error
-
-    def __str__(self):
-        return repr(self.error)
+URL = Tuple[str, int]
 
 
 class SftpClient:
-    def __init__(self, host: str, port: int):
-        self.host = host
-        self.port = port
-        self.sftp = None
-        self.transport = paramiko.Transport((host, port))
+    def __init__(self, url: URL = None, transport: paramiko.Transport = None):
+        try:
+            if url is None and transport is None:
+                raise InitException('SftpClient: missing parameters')
+            if url is not None and transport is not None:
+                raise InitException('SftpClient: parameters conflicts')
+        except InitException as e:
+            print(e)
+        else:
+            # url 比 transport 具有更高的优先级
+            if url is not None:
+                self.transport = paramiko.Transport((url[0], url[1]))
+            else:
+                self.transport = transport
+            self.sftp = None
+
+    def __del__(self):
+        self.close()
 
     def warning(func):
         def wrapper(self, *args, **kwargs):

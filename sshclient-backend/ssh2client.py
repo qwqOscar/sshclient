@@ -6,26 +6,43 @@ import paramiko
 
 import os
 import sys
-class Ssh2Client:
-    def __init__(self, host: str, port: int):
-        self.__host = host
-        self.__port = port
-        self.__ssh = None
-        self.__channel = None
+from typing import Tuple
+from ClientException import InitException, NoConnectionException
 
-        # 7-bit C1 ANSI sequences
-        self.__ansi_escape = re.compile(r'''
-                \x1B  # ESC
-                (?:   # 7-bit C1 Fe (except CSI)
-                [@-Z\\-_]
-                |     # or [ for CSI, followed by a control sequence
-                \[
-                [0-?]*  # Parameter bytes
-                [ -/]*  # Intermediate bytes
-                [@-~]   # Final byte
-            )
-        ''', re.VERBOSE)
-        self.color_pattern = r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))'
+
+URL = Tuple[str, int]
+
+
+class Ssh2Client:
+    def __init__(self, url: URL = None, transport: paramiko.Transport = None):
+        try:
+            if url is None and transport is None:
+                raise InitException('SftpClient: missing parameters')
+            if url is not None and transport is not None:
+                raise InitException('SftpClient: parameters conflicts')
+        except InitException as e:
+            print(e)
+        else:
+            # url 比 transport 具有更高的优先级
+            if url is not None:
+                self.transport = paramiko.Transport((url[0], url[1]))
+            else:
+                self.transport = transport
+            self.__ssh = None
+            self.__channel = None
+            # 7-bit C1 ANSI sequences
+            self.__ansi_escape = re.compile(r'''
+                            \x1B  # ESC
+                            (?:   # 7-bit C1 Fe (except CSI)
+                            [@-Z\\-_]
+                            |     # or [ for CSI, followed by a control sequence
+                            \[
+                            [0-?]*  # Parameter bytes
+                            [ -/]*  # Intermediate bytes
+                            [@-~]   # Final byte
+                        )
+                    ''', re.VERBOSE)
+            self.color_pattern = r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))'
 
     def __del__(self):
         self.__close()
@@ -36,10 +53,11 @@ class Ssh2Client:
 
     def connect(self, user: str, pwd: str) -> bool:
         self.__close()
-
+        self.transport.connect(username=user, password=pwd)
         self.__ssh = paramiko.SSHClient()
+        self.__ssh._transport = self.transport
         self.__ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.__ssh.connect(self.__host, username=user, password=pwd, port=self.__port)
+        # self.__ssh.connect(self.__host, username=user, password=pwd, port=self.__port)
         return True
 
     def exec(self, cmd: str, end_str=('# ', '$ ', '? ', '% '), timeout=30):
@@ -64,6 +82,7 @@ class Ssh2Client:
             begin_pos = result.find('\r\n')
             print(result[begin_pos + 2:], end='')
         return
+
     def __recv(self, channel, end_str, timeout) -> str:
         result = ''
         out_str = ''
