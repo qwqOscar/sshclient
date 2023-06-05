@@ -25,9 +25,14 @@ class Ssh2Client:
                 [@-~]   # Final byte
             )
         ''', re.VERBOSE)
+        self.color_pattern = r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))'
 
     def __del__(self):
         self.__close()
+
+    def clear_irc_color(self, string):
+        pattern = r'\x1b(\[.*?[@-~]|\].*?(\x07|\x1b\\))'
+        return re.sub(pattern, '', string)
 
     def connect(self, user: str, pwd: str) -> bool:
         self.__close()
@@ -39,16 +44,16 @@ class Ssh2Client:
 
     def exec(self, cmd: str, end_str=('# ', '$ ', '? ', '% '), timeout=30):
         if not self.__channel:
-            self.__channel = self.__ssh.invoke_shell(term='xterm', width=4096, height=48)
+            self.__channel = self.__ssh.invoke_shell(term='xterm', width=4096, height=96)
             time.sleep(0.020)
-            result = self.__channel.recv(4096).decode()
+            result = self.__recv(self.__channel, end_str, timeout)
             print(result, end='')
-            result = self.__channel.recv(4096).decode()
-            print(result, end='')
+            # result = self.__recv(self.__channel, end_str, timeout)
+            # print(result, end='')
         while True:
             cmd = input('')
-            for i in range(0, len(cmd)):
-                print(int(i))
+            # for i in range(0, len(cmd)):
+            #     print(int(i))
             if cmd.endswith('\n'):
                 self.__channel.send(cmd)
             else:
@@ -56,11 +61,8 @@ class Ssh2Client:
             if cmd.strip().lower() == 'exit':
                 break
             result = self.__recv(self.__channel, end_str, timeout)
-            print(result, end='')
-            # begin_pos = result.find('\r\n')
-            # end_pos = result.rfind('\r\n')
-            # if begin_pos == end_pos:
-            #     return ''
+            begin_pos = result.find('\r\n')
+            print(result[begin_pos + 2:], end='')
         return
     def __recv(self, channel, end_str, timeout) -> str:
         result = ''
@@ -77,7 +79,7 @@ class Ssh2Client:
 
                 match, result = self.__match(out_str, end_str)
                 if match is True:
-                    return result.strip()
+                    return result
                 else:
                     max_wait_time -= 50
             except socket.timeout:
@@ -86,8 +88,10 @@ class Ssh2Client:
         raise Exception('recv data timeout')
 
     def __match(self, out_str: str, end_str: list) -> (bool, str):
-        result = self.__ansi_escape.sub('', out_str)
-
+        result = out_str
+        # result = re.sub(self.color_pattern, '', result)
+        # result = (re.compile(r'\x1b[^m]*m')).sub('', result)
+        result = self.__ansi_escape.sub('', result)
         for it in end_str:
             if result.endswith(it):
                 return True, result
