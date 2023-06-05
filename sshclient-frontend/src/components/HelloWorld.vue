@@ -3,8 +3,8 @@
 
   <div class="card">
     <button type="button" @click="count++">count is {{ count }}</button>
-    <el-button type="primary" @click="pingpong">
-      点击{{ buttontext }}
+    <el-button @click="pingpong">
+      点击
     </el-button>
     <p>
       Edit
@@ -26,6 +26,7 @@
 </template>
 
 <script lang="ts">
+import { Dictionary } from 'lodash'
 import { ref } from 'vue'
 export default {
   props : {
@@ -39,12 +40,19 @@ export default {
   },
   methods : {
     pingpong () {
-      
+      // console.log('wwxnb')
+      // console.log(this.$socket)
+      this.$socket.send('111')
     },
   },
   created () {
-
-  }
+    this.$options.sockets.onmessage = (res : any) =>{
+      console.log(res.data)
+    }
+  },
+  unmounted() {
+    this.$socket.close()
+  },
 }
 
 const count = ref(0)
