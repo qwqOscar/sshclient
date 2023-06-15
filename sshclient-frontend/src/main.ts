@@ -18,5 +18,13 @@ app.use(VueNativeSock, "ws://127.0.0.1:7070", {
   reconnection: true,
 }
 );
+import Terminal from 'vue-web-terminal'
+app.use(Terminal)
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
+}
+
 app.mount('#app').$nextTick(() => postMessage({ payload: 'removeLoading' }, '*'));
 export default app;

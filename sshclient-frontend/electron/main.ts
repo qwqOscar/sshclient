@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, BrowserView, globalShortcut } from 'electron'
 import path from 'node:path'
+// const electron = require('electron')
 
 // The built directory structure
 //
@@ -19,12 +20,24 @@ let win: BrowserWindow | null
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 
 function createWindow() {
+  // const Menu = electron.Menu
+  // Menu.setApplicationMenu(null)
   win = new BrowserWindow({
     icon: path.join(process.env.PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
+    // titleBarStyle: 'hidden'
   })
+  win.removeMenu()
+  globalShortcut.register('CommandOrControl+Shift+i', function () {
+    win.webContents.openDevTools()
+  })
+
+//   const view = new BrowserView()
+// win.setBrowserView(view)
+// view.setBounds({ x: 0, y: 0, width: 300, height: 300 })
+// view.webContents.loadURL('https://electronjs.org')
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
@@ -42,5 +55,14 @@ function createWindow() {
 app.on('window-all-closed', () => {
   win = null
 })
+
+//在ready事件里
+// app.on('ready', async () => {
+//   globalShortcut.register('F12', function () {
+//     win.webContents.openDevTools()
+//   })
+//   createWindow();
+// })
+
 
 app.whenReady().then(createWindow)
