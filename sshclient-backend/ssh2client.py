@@ -12,7 +12,7 @@ from ClientException import InitException, NoConnectionException
 
 URL = Tuple[str, int]
 
-
+end_str=('# ', '$ ', '? ', '% ')
 class Ssh2Client:
     def __init__(self, url: URL = None, transport: paramiko.Transport = None):
         try:
@@ -58,45 +58,35 @@ class Ssh2Client:
         self.__ssh._transport = self.transport
         self.__ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         # self.__ssh.connect(self.__host, username=user, password=pwd, port=self.__port)
-        return True
-
-    def exec(self, cmd: str, end_str=('# ', '$ ', '? ', '% '), timeout=30):
         if not self.__channel:
             self.__channel = self.__ssh.invoke_shell(term='xterm', width=4096, height=96)
-            time.sleep(0.020)
-            result = self.__recv(self.__channel, end_str, timeout)
-            print(result, end='')
-            # result = self.__recv(self.__channel, end_str, timeout)
-            # print(result, end='')
-        while True:
-            cmd = input('')
-            # for i in range(0, len(cmd)):
-            #     print(int(i))
-            if cmd.endswith('\n'):
-                self.__channel.send(cmd)
-            else:
-                self.__channel.send(cmd + '\n')
-            if cmd.strip().lower() == 'exit':
-                break
-            result = self.__recv(self.__channel, end_str, timeout)
-            begin_pos = result.find('\r\n')
-            print(result[begin_pos + 2:], end='')
-        return
+            # time.sleep(0.020)
+        return True
 
-    def __recv(self, channel, end_str, timeout) -> str:
+    def exec(self, cmd: str, timeout=30):
+        if cmd.endswith('\n'):
+            self.__channel.send(cmd)
+        else:
+            self.__channel.send(cmd + '\n')
+        if cmd.strip().lower() == 'exit':
+            return
+        result = self.recv(timeout)
+        begin_pos = result.find('\r\n')
+        return result[begin_pos + 2:]
+
+    def recv(self, timeout) -> str:
         result = ''
         out_str = ''
         max_wait_time = timeout * 1000
-        channel.settimeout(0.05)
+        self.__channel.settimeout(0.05)
         while max_wait_time > 0:
             try:
-                out = channel.recv(1024 * 1024).decode()
-
+                out = self.__channel.recv(1024 * 1024).decode()
                 if not out or out == '':
                     continue
                 out_str = out_str + out
 
-                match, result = self.__match(out_str, end_str)
+                match, result = self.__match(out_str)
                 if match is True:
                     return result
                 else:
@@ -106,13 +96,13 @@ class Ssh2Client:
 
         raise Exception('recv data timeout')
 
-    def __match(self, out_str: str, end_str: list) -> (bool, str):
+    def __match(self, out_str: str) -> (bool, str):
         result = out_str
         # result = re.sub(self.color_pattern, '', result)
         # result = (re.compile(r'\x1b[^m]*m')).sub('', result)
-        result = self.__ansi_escape.sub('', result)
+        # result = self.__ansi_escape.sub('', result)
         for it in end_str:
-            if result.endswith(it):
+            if result.find(it) != -1:
                 return True, result
         return False, result
 

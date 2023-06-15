@@ -19,7 +19,7 @@
     "electron-builder": "^23.6.0",
     "typescript": "^5.0.2",
     "unplugin-auto-import": "^0.16.4",
-    "unplugin-vue-components": "^0.25.0",
+    "unplugin-vue-components": "^0.25.1",
     "vite": "^4.3.2",
     "vite-plugin-electron": "^0.11.2",
     "vite-plugin-electron-renderer": "^0.14.5",
