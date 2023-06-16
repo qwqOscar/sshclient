@@ -1,27 +1,29 @@
 <template>
   <!-- <Terminal name="test"></Terminal> -->
 
-  <Tab />
+  <Sidemenu>
+
+  </Sidemenu>
 </template>
 
 <style scoped></style>
 
 <script setup lang="ts">
-import Tab from './components/titleBar.vue'
+// import HelloWorld from './components/HelloWorld.vue'
+// import Terminal from "vue-web-terminal"
+// import { api as TerminalApi } from 'vue-web-terminal'
+
+// const initTerminal = () => {
+    // TerminalApi.fullscreen('test')
+// }
+
+// initTerminal()
 </script>
-
-<!-- <script>
-import Tab from './components/titleBar.vue'
-import VueNativeSock from "vue-native-websocket-vue3"
-import { useWebSocket } from "vue-native-websocket-vue3"
-import store from './utils/store'
+<script lang="ts">
+import Sidemenu from './components/SideMenu.vue'
 export default {
-  data(): {
-
+  components: {
+    Sidemenu,
   },
-  setup() {
-    const socket = useWeb
-  }
 }
-
-</script> -->
+</script>

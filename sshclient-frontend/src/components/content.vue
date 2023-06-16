@@ -156,6 +156,6 @@ export default {
 }
 
 .terminal {
-    height: 100%s;
+    height: 100%;
 }
 </style>

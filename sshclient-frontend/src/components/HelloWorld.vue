@@ -27,7 +27,7 @@ export default {
         host : '139.196.203.149' ,
         port : 22,
         username : 'root',
-        password : '',
+        password : 'E_2A6nV_-gnVPmf',
       }, })
     },
     sshcmd () {
