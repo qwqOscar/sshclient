@@ -1,67 +1,89 @@
 <template>
     <el-tabs v-model="editableTabsValue" type="card" editable class="tabs" @edit="handleTabsEdit">
-        <el-tab-pane v-for="item in editableTabs" :key="item.name" :label="item.title" :name="item.name"
-        class="pane"
-        >
-            <Content :msg="item.name"></Content>
+        <el-tab-pane v-for="item in editableTabs" :key="item.name" :label="item.title" :name="item.name" class="pane">
+            <Content :host="conn.data.host" :port="conn.data.port" :username="conn.data.username"></Content>
             <!-- {{ item.content }} -->
             <!-- <Terminal :name="item.name"></Terminal> -->
         </el-tab-pane>
     </el-tabs>
 </template>
-<script lang="ts" setup>
+
+<script lang="ts">
 import Content from './content.vue'
 import { ref } from 'vue'
 import type { TabPaneName } from 'element-plus'
-
-
-
-let tabIndex = 2
-
-const editableTabsValue = ref('1')
-const editableTabs = ref([
-    {
-        title: 'Tab 1',
-        name: '1',
-        content: 'Tab 1 content',
-    },
-    {
-        title: 'Tab 2',
-        name: '2',
-        content: 'Tab 2 content',
-    },
-])
-
-
-
-const handleTabsEdit = (
-    targetName: TabPaneName | undefined,
-    action: 'remove' | 'add'
-) => {
-    if (action === 'add') {
-        const newTabName = `${++tabIndex}`
-        editableTabs.value.push({
-            title: 'New Tab',
-            name: newTabName,
-            content: 'New Tab content',
-        })
-        editableTabsValue.value = newTabName
-    } else if (action === 'remove') {
-        const tabs = editableTabs.value
-        let activeName = editableTabsValue.value
-        if (activeName === targetName) {
-            tabs.forEach((tab, index) => {
-                if (tab.name === targetName) {
-                    const nextTab = tabs[index + 1] || tabs[index - 1]
-                    if (nextTab) {
-                        activeName = nextTab.name
-                    }
-                }
-            })
+export default {
+    data() {
+        return {
+            conn: {
+                type: 'initssh', data: {
+                    host: '121.43.235.227',
+                    port: 22,
+                    username: 'root',
+                    password: '',
+                },
+            },
+            editableTabs: [
+                {
+                    title: 'Tab 1',
+                    name: '1',
+                    content: 'Tab 1 content',
+                },
+                {
+                    title: 'Tab 2',
+                    name: '2',
+                    content: 'Tab 2 content',
+                },
+            ],
+            editableTabsValue: '1',
+            tabIndex: 2,
         }
+    },
+    methods: {
+        initssh(config) {
+            console.log('initssh')
+            // console.log(this.$socket)
+            // if (this.$socket && this.$socket.connected) {
+            this.$socket.sendObj(config)
+            // } else {
+            //     console.log('websocket not ready')
+            //     return
+            // }
 
-        editableTabsValue.value = activeName
-        editableTabs.value = tabs.filter((tab) => tab.name !== targetName)
+        },
+        handleTabsEdit(
+            targetName: TabPaneName | undefined,
+            action: 'remove' | 'add'
+        ) {
+            if (action === 'add') {
+                this.editableTabs.push({
+                    title: `${this.conn.data.username}@${this.conn.data.host}:${this.conn.data.port}`,
+                    name: `${this.conn.data.username}@${this.conn.data.host}:${this.conn.data.port}`,
+                    content: 'New Tab content',
+                })
+                this.initssh(this.conn)
+                this.editableTabsValue = `${this.conn.data.username}@${this.conn.data.host}:${this.conn.data.port}`
+            } else if (action === 'remove') {
+                const tabs = this.editableTabs
+                let activeName = this.editableTabsValue
+                if (activeName === targetName) {
+                    tabs.forEach((tab, index) => {
+                        if (tab.name === targetName) {
+                            const nextTab = tabs[index + 1] || tabs[index - 1]
+                            if (nextTab) {
+                                activeName = nextTab.name
+                            }
+                        }
+                    })
+                }
+
+                this.editableTabsValue = activeName
+                this.editableTabs = tabs.filter((tab) => tab.name !== targetName)
+            }
+        }
+    },
+    setup() {
+
     }
 }
 </script>
@@ -72,11 +94,13 @@ const handleTabsEdit = (
     padding: 0;
     margin: 0;
 }
+
 .tabs>.el-tabs__header {
     padding: 0;
     margin: 0;
     border: 0;
 }
+
 .tabs>.el-tabs__content {
     /* padding: 32px; */
     padding: 0;

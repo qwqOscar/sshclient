@@ -7,14 +7,21 @@
 <style scoped></style>
 
 <script setup lang="ts">
-// import HelloWorld from './components/HelloWorld.vue'
 import Tab from './components/titleBar.vue'
-// import Terminal from "vue-web-terminal"
-// import { api as TerminalApi } from 'vue-web-terminal'
-
-// const initTerminal = () => {
-    // TerminalApi.fullscreen('test')
-// }
-
-// initTerminal()
 </script>
+
+<!-- <script>
+import Tab from './components/titleBar.vue'
+import VueNativeSock from "vue-native-websocket-vue3"
+import { useWebSocket } from "vue-native-websocket-vue3"
+import store from './utils/store'
+export default {
+  data(): {
+
+  },
+  setup() {
+    const socket = useWeb
+  }
+}
+
+</script> -->

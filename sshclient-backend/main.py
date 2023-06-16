@@ -18,6 +18,7 @@ sftps = []
 async def echo(websocket, path):
     async for message in websocket:
         message = json.loads(message)
+        print(message)
         if message['type'] == 'initssh' :
             if len(sshs) >= 10:
                 await websocket.send('Quantity reaches upper limit')
@@ -38,9 +39,14 @@ async def echo(websocket, path):
                 print(result, end='')
                 print(sshs)
                 await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
+                result = ssh.recv(30)
+                print(result, end='')
+                print(sshs)
+                await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
         elif message['type'] == 'sshcmd':
             url = (message['data']['host'], message['data']['port'])
             username = message['data']['username']
+            print(sshs)
             for ssh in sshs:
                 if ssh['url'] == url and ssh['username'] == username:
                     result = ssh['sshc'].exec(message['data']['cmd'])

@@ -27,11 +27,24 @@ export default {
             input: '',
             length: 0,
             idx: 0,
-            history: []
+            history: [],
+            output: '',
+            status: 'WAIT_INPUT'
         }
     },
-    props: ['msg'],
+    props: ['host', 'port', 'username'],
     methods: {
+
+        sshcmd(msg) {
+            this.$socket.sendObj({
+                type: 'sshcmd', data: {
+                    host: this.host,
+                    port: this.port,
+                    username: this.username,
+                    cmd: msg
+                },
+            })
+        },
         createXTerm() {
             let xterm = new Terminal({
                 rendererType: "canvas",
@@ -47,16 +60,19 @@ export default {
         initXTerm(xterm) {
             this.history = []
             this.idx = 0
-            const prefix = `${this.user} $ `
+            // this.initssh()
+            // const prefix = `${this.user} $ `
+            const prefix = ''
             const fitAddon = new FitAddon()
             xterm.open(this.$refs['xterm'])
             xterm.loadAddon(fitAddon)
-            let hello = `\x1B[1;3;32mWelcome to Terminal-${this.msg}.\x1B[0m`
+            let hello = `\x1B[1;3;32mConnected to ${this.user}@${this.host}:${this.port}.\x1B[0m`
             xterm.writeln(hello)
             xterm.prompt = () => {
-                xterm.write(prefix)
+                // xterm.write(prefix)
                 this.input = ''
                 this.length = 0
+                this.status = 'WAIT_INPUT'
             }
             xterm.prompt()
             fitAddon.fit()
@@ -69,14 +85,19 @@ export default {
                 const currentY = xterm._core.buffer.y
                 const currentX = xterm._core.buffer.x;
                 console.log(currentX, currentY)
+                if (this.status != 'WAIT_INPUT')
+                    return
                 if (domEvent.code == 'Enter') {
                     xterm.writeln('')
                     if (this.input.length) {
                         this.history.push(this.input)
                         this.idx = this.history.length
+                        this.sshcmd(this.input)
+                        this.status = 'WAIT_OUTPUT'
+                        // xterm.writeln(this.output)
                     }
-                    xterm.prompt()
-                    console.log(this.history)
+                    // xterm.prompt()
+                    // console.log(this.history)
                 } else if (domEvent.code == 'Backspace' && currentX > prefix.length) {
                     const start = currentX - prefix.length
                     xterm.write('\x1b[0D\x1b[0K')
@@ -106,23 +127,24 @@ export default {
                     xterm.write(e.key)
                 }
             })
-            // xterm.onData((k) => {
-            //     console.log(k.code)
-            //     if (k == 127) {
-            //         console.log(333)
-            //     } else if (k == 13) {
-            //         console.log(222)
-            //     }
-            //     xterm.write(k)
-            // })
 
+        }
+    },
+    created() {
+        this.$options.sockets.onmessage = (res) => {
+            console.log(res.data)
+            this.output = JSON.parse(res.data).data
+            this.term.write(this.output)
+            this.term.prompt()
         }
     },
     mounted() {
         let term = this.createXTerm()
         this.initXTerm(term)
-
         this.term = term
+    },
+    unmounted() {
+        this.$socket.close()
     }
 }
 </script>
