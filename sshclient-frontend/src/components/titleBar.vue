@@ -12,8 +12,6 @@
 <script lang="ts" setup>
 import Content from './content.vue'
 import { ref } from 'vue'
-import Terminal from "vue-web-terminal"
-import { api as TerminalApi } from 'vue-web-terminal'
 import type { TabPaneName } from 'element-plus'
 
 
@@ -34,13 +32,7 @@ const editableTabs = ref([
     },
 ])
 
-const initTerminal = () => {
-    for (const item in editableTabs) {
-        TerminalApi.fullscreen(item.name)
-    }
-}
 
-initTerminal()
 
 const handleTabsEdit = (
     targetName: TabPaneName | undefined,
@@ -88,10 +80,12 @@ const handleTabsEdit = (
 .tabs>.el-tabs__content {
     /* padding: 32px; */
     padding: 0;
+    margin: 0;
     color: #6b778c;
     font-size: 32px;
     font-weight: 600;
     height: 100%;
+    width: 100%;
 }
 
 Terminal {
