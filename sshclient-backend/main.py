@@ -22,7 +22,6 @@ async def echo(websocket, path):
     global start_id
     async for message in websocket:
         message = json.loads(message)
-        print(message)
         if message['type'] == 'initssh' :
             if len(sshs) >= 10:
                 await websocket.send('Quantity reaches upper limit')
@@ -43,8 +42,11 @@ async def echo(websocket, path):
                 print(result, end='')
                 print(sshs)
                 await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
+                result = ssh.recv(30)
+                print(result, end='')
+                print(sshs)
+                await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
         elif message['type'] == 'sshcmd':
-            print(message)
             url = (message['data']['host'], message['data']['port'])
             username = message['data']['username']
             print(sshs)
