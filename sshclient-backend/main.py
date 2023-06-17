@@ -127,9 +127,9 @@ async def echo(websocket, path):
             sftp = SftpClient(url)
             sftp.connect(username, password)
             if mode == True:
-                sftp.download(lp=local, rp=remote)
-            elif mode == False:
                 sftp.upload(lp=local, rp=remote)
+            elif mode == False:
+                sftp.download(lp=local, rp=remote)
             await websocket.send(json.dumps({'type': 'done'}))
 
         print(f"Received msg type: {message['type']}")
