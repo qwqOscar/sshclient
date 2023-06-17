@@ -36,10 +36,14 @@ export default {
     methods: {
 
         sshcmd(msg) {
+            console.log(this.host)
+            console.log(this.port)
+            console.log(this.username)
+            console.log(msg)
             this.$socket.sendObj({
                 type: 'sshcmd', data: {
                     host: this.host,
-                    port: this.port,
+                    port: 22,
                     username: this.username,
                     cmd: msg
                 },

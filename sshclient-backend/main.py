@@ -42,11 +42,8 @@ async def echo(websocket, path):
                 print(result, end='')
                 print(sshs)
                 await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
-                result = ssh.recv(30)
-                print(result, end='')
-                print(sshs)
-                await websocket.send(json.dumps({'type' : 'sshcmdreponse', 'data' : result}))
         elif message['type'] == 'sshcmd':
+            print(message)
             url = (message['data']['host'], message['data']['port'])
             username = message['data']['username']
             print(sshs)
@@ -118,11 +115,6 @@ async def echo(websocket, path):
                 #使用json.dump()将数字列表存储到文件numbers.json中
                 json.dump(config, f)
             await websocket.send(json.dumps({'type' : 'createconfig' , 'data' : {'id' : str(start_id - 1), 'msg' : 'Success!'}}))
-
-
-
-
-
         print(f"Received msg type: {message['type']}")
         print(f"Received msg data: {message['data']}")
 

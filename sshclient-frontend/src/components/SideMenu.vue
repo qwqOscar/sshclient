@@ -116,11 +116,6 @@ export default {
 			this.currentIndex = index
 			console.log(this.currentIndex)
 		},
-		getmenuitem() {
-			this.$socket.sendObj({
-				type: 'getconfig'
-			})
-		},
 		handleOpen() {
 			if (this.$socket.readyState === 1) {
 				this.$socket.sendObj({
