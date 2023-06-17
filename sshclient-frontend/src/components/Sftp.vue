@@ -1,17 +1,22 @@
 <template>
     <el-steps :active="step" finish-status="success" simple>
+        <el-step title="Config" />
         <el-step title="Direction" />
         <el-step title="Address" />
-        <el-step title="Load" />
     </el-steps>
-    <el-row justify="space-between" class="item" tabindex="1" @blur="blurInput($event)" @focus="focusInput($event)">
+    <el-row class="item" tabindex="1">
+        <el-select v-model="configval" placeholder="Select">
+            <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+    </el-row>
+    <el-row justify="space-between" class="item" tabindex="2" @blur="blurInput($event)" @focus="focusInput($event)">
         <div style="align-items: center;">
             <el-text>Mode</el-text>
         </div>
         <el-switch v-model="mode" class="ml-2" style="--el-switch-off-color: #13ce66" active-text="Upload"
             inactive-text="Download" />
     </el-row>
-    <div class="item" tabindex="2" style="filter: blur(1px)" @blur="blurInput($event)" @focus="focusInput($event)">
+    <div class="item" tabindex="3" @blur="blurInput($event)" @focus="focusInput($event)">
         <el-row class="no-wrap" justify="space-between">
             <el-text>Local Address</el-text>
             <el-input v-model="local" placeholder="Local" class="inputbox" tabindex="2" @blur="blurInput($event)"
@@ -22,7 +27,7 @@
             <el-input v-model="remote" placeholder="Remote" class="inputbox" />
         </el-row>
     </div>
-    <el-row class="item" tabindex="3" style="filter: blur(1px);" @blur="blurInput($event)" @focus="focusInput($event)">
+    <el-row class="item" tabindex="4" @blur="blurInput($event)" @focus="focusInput($event)">
         <el-button type="primary" @click="sendData">Load</el-button>
     </el-row>
 </template>
@@ -36,129 +41,107 @@ export default {
             mode: true,
             local: '',
             remote: '',
+            options: [],
+            configs: {},
+            configval: ""
         }
     },
     methods: {
         blurInput(e: FocusEvent) {
             // 失去焦点时添加模糊效果
-            const dom = e.target as HTMLElement
-            dom.style.filter = 'blur(1px)'
+            // const dom = e.target as HTMLElement
+            // dom.style.filter = 'blur(1px)'
         },
         focusInput(e: FocusEvent) {
             // 获得焦点时移除模糊效果
-            const lastDoms = document.querySelectorAll('[tabindex="1"]')
-            console.log(lastDoms)
-            lastDoms.forEach((elem) => {
-                const lastDom = elem as HTMLElement
-                lastDom.style.filter = 'blur(1px)'
-            })
+            // const lastDoms = document.querySelectorAll('[tabindex="1"]')
+            // console.log(lastDoms)
+            // lastDoms.forEach((elem) => {
+            //     const lastDom = elem as HTMLElement
+            //     lastDom.style.filter = 'blur(1px)'
+            // })
             this.step = (e.target as HTMLElement).tabIndex
-            const doms = document.querySelectorAll(`[tabindex=${this.step}]`)
-            doms.forEach((elem) => {
-                const dom = elem as HTMLElement
-                dom.style.filter = ''
-            })
+            // const doms = document.querySelectorAll(`[tabindex=${this.step}]`)
+            // doms.forEach((elem) => {
+            //     const dom = elem as HTMLElement
+            //     dom.style.filter = ''
+            // })
             // this.step = dom.tabIndex
         },
-        passBlur(e: FocusEvent) {
-            const dom = e.target as HTMLElement
-            dom.parentElement?.blur()
-        },
-        passFocus(e: FocusEvent) {
-            const dom = e.target as HTMLElement
-            dom.parentElement?.focus()
-        },
+        // passBlur(e: FocusEvent) {
+        //     const dom = e.target as HTMLElement
+        //     dom.parentElement?.blur()
+        // },
+        // passFocus(e: FocusEvent) {
+        //     const dom = e.target as HTMLElement
+        //     dom.parentElement?.focus()
+        // },
         sendData() {
+            if (!this.configs[this.configval] || !this.local || !this.remote) {
+                ElMessage({
+                    message: 'Fill All the Fields!',
+                    type: 'error',
+                    duration: 1000,
+                })
+            }
             this.$socket.sendObj({
                 type: 'sftp', data: {
+                    ip: this.configs[this.configval]['ip'],
+                    username: this.configs[this.configval]['username'],
+                    password: this.configs[this.configval]['password'],
+                    port: 22,
                     remote: this.remote,
                     local: this.local,
                     mode: this.mode,
                 },
             })
         }
+    },
+    mounted() {
+        if (this.$socket.readyState === 1) {
+            this.$socket.sendObj({
+                type: 'getconfig',
+                data: ''
+            })
+        }
+        this.$options.sockets.onmessage = (res: any) => {
+            var data = JSON.parse(res.data)
+            if (data.type === 'config') {
+                data = JSON.parse(data.data)
+                var arr = Object.keys(data)
+                this.options.length = arr.length
+                this.configs = data
+                for (var i = 0; i < arr.length; i++) {
+                    this.options[i] = {
+                        // label : data[arr[i]]['name'] + '——' + data[arr[i]]['username'] + '@' + data[arr[i]]['ip'],
+                        label: data[arr[i]]['name'],
+                        value: arr[i],
+                    }
+                }
+            }
+            if (data.type === 'done') {
+                const message = this.mode ? 'Upload' : 'Download'
+                ElMessage({
+                    message: message + ' Successfully!',
+                    type: 'success',
+                    duration: 1000,
+                })
+            }
+        }
     }
 }
 </script>
   
-<script lang="ts" setup>
-import { reactive, ref } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
 
-const ruleFormRef = ref<FormInstance>()
-
-const checkAge = (rule: any, value: any, callback: any) => {
-    if (!value) {
-        return callback(new Error('Please input the age'))
-    }
-    setTimeout(() => {
-        if (!Number.isInteger(value)) {
-            callback(new Error('Please input digits'))
-        } else {
-            if (value < 18) {
-                callback(new Error('Age must be greater than 18'))
-            } else {
-                callback()
-            }
-        }
-    }, 1000)
-}
-
-const validatePass = (rule: any, value: any, callback: any) => {
-    if (value === '') {
-        callback(new Error('Please input the password'))
-    } else {
-        if (ruleForm.checkPass !== '') {
-            if (!ruleFormRef.value) return
-            ruleFormRef.value.validateField('checkPass', () => null)
-        }
-        callback()
-    }
-}
-const validatePass2 = (rule: any, value: any, callback: any) => {
-    if (value === '') {
-        callback(new Error('Please input the password again'))
-    } else if (value !== ruleForm.pass) {
-        callback(new Error("Two inputs don't match!"))
-    } else {
-        callback()
-    }
-}
-
-const form = reactive({
-    remoteAddr: '',
-    hostAddr: '',
-    age: '',
-})
-
-const rules = reactive<FormRules>({
-    pass: [{ validator: validatePass, trigger: 'blur' }],
-    checkPass: [{ validator: validatePass2, trigger: 'blur' }],
-    age: [{ validator: checkAge, trigger: 'blur' }],
-})
-
-const submitForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
-    formEl.validate((valid) => {
-        if (valid) {
-            console.log('submit!')
-        } else {
-            console.log('error submit!')
-            return false
-        }
-    })
-}
-
-const resetForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
-    formEl.resetFields()
-}
-</script>
 <style scoped>
 .item {
     background-color: #f5f7fa;
     margin-top: 4px;
 }
+
+/* .item:not([tabindex='1']) {
+    filter: blur(1px)
+} */
 
 .no-wrap {
     flex-wrap: nowrap;

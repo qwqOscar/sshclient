@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 from ssh2client import Ssh2Client
+from sftpclient import SftpClient
 import json
 import os
 
@@ -117,6 +118,22 @@ async def echo(websocket, path):
                 #使用json.dump()将数字列表存储到文件numbers.json中
                 json.dump(config, f)
             await websocket.send(json.dumps({'type' : 'createconfig' , 'data' : {'id' : str(start_id - 1), 'msg' : 'Success!'}}))
+        elif message['type'] == 'sftp':
+            url = (message['data']['ip'], message['data']['port'])
+            print(url)
+            username = message['data']['username']
+            password = message['data']['password']
+            remote = message['data']['remote']
+            local = message['data']['local']
+            mode = message['data']['mode']
+            sftp = SftpClient(url)
+            sftp.connect(username, password)
+            if mode == True:
+                sftp.upload(lp=local, rp=remote)
+            elif mode == False:
+                sftp.download(lp=local, rp=remote)
+            await websocket.send(json.dumps({'type': 'done'}))
+
         print(f"Received msg type: {message['type']}")
         print(f"Received msg data: {message['data']}")
 
